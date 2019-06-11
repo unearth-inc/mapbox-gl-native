@@ -54,9 +54,9 @@ public class MapboxApplication extends Application {
 
   private void initializeLogger() {
     Logger.setLoggerDefinition(new TimberLogger());
-    if (BuildConfig.DEBUG) {
+    //if (BuildConfig.DEBUG) {
       Timber.plant(new DebugTree());
-    }
+    //}
   }
 
   private void initializeStrictMode() {
