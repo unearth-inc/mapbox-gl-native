@@ -31,8 +31,9 @@ void Renderer::setObserver(RendererObserver* observer) {
 }
 
 void Renderer::render(const UpdateParameters& updateParameters) {
+    auto frame_start = Clock::now(); 
     if (auto renderTree = impl->orchestrator.createRenderTree(updateParameters)) {
-        impl->render(*renderTree);
+        impl->render(*renderTree, frame_start);
     }
 }
 

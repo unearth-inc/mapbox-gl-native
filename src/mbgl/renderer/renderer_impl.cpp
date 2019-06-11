@@ -24,6 +24,22 @@ static RendererObserver& nullObserver() {
     return observer;
 }
 
+namespace {
+
+struct {
+    double totalTime = 0.0;
+    double orchestrationTime = 0.0;
+    double orchestrationTimePeak = 0.0;
+    double orchestrationPercentagePeak = 0.0;
+    double uploadTime = 0.0;
+    double uploadTimePeak = 0.0;
+    double uploadPercentagePeak = 0.0;
+    unsigned failedFrames = 0u;
+    unsigned framesSavedWithBackgroundOrchestration = 0u;
+} stats;
+
+} // namespace
+
 Renderer::Impl::Impl(gfx::RendererBackend& backend_,
                      float pixelRatio_,
                      optional<std::string> localFontFamily_)
@@ -35,6 +51,18 @@ Renderer::Impl::Impl(gfx::RendererBackend& backend_,
 }
 
 Renderer::Impl::~Impl() {
+    Log::Warning(Event::General,
+                "Overall stats: orchestration took %f %% of %f ms of the total rendering time",
+                stats.orchestrationTime / stats.totalTime * 100.0, stats.totalTime);
+    Log::Warning(Event::General,
+                "Overall stats: orchestration peak value: %f ms, orchestration peak frame time percentage: %f",
+                stats.orchestrationTimePeak, stats.orchestrationPercentagePeak);
+    Log::Warning(Event::General,
+                 "Overall stats: upload peak value: %f ms, upload peak frame time percentage: %f",
+                stats.uploadTimePeak, stats.uploadPercentagePeak);
+    Log::Warning(Event::General,
+                 "Overall stats: %u frames taking > 16.7 ms, %u of them corrected with background orchestration",
+                stats.failedFrames, stats.framesSavedWithBackgroundOrchestration);
     assert(gfx::BackendScope::exists());
 };
 
@@ -42,7 +70,8 @@ void Renderer::Impl::setObserver(RendererObserver* observer_) {
     observer = observer_ ? observer_ : &nullObserver();
 }
 
-void Renderer::Impl::render(const RenderTree& renderTree) {
+void Renderer::Impl::render(const RenderTree& renderTree, TimePoint frame_start) {
+    auto render_start = Clock::now();
     if (renderState == RenderState::Never) {
         observer->onWillStartRenderingMap();
     }
@@ -79,6 +108,8 @@ void Renderer::Impl::render(const RenderTree& renderTree) {
     const auto& sourceRenderItems = renderTree.getSourceRenderItems();
     const auto& layerRenderItems = renderTree.getLayerRenderItems();
 
+    auto upload_start = Clock::now();
+
     // - UPLOAD PASS -------------------------------------------------------------------------------
     // Uploads all required buffers and images before we do any actual rendering.
     {
@@ -95,6 +126,7 @@ void Renderer::Impl::render(const RenderTree& renderTree) {
         renderTree.getLineAtlas().upload(*uploadPass);
         renderTree.getPatternAtlas().upload(*uploadPass);
     }
+    auto upload_end = Clock::now();
 
     // - 3D PASS -------------------------------------------------------------------------------------
     // Renders any 3D layers bottom-to-top to unique FBOs with texture attachments, but share the same
@@ -219,6 +251,45 @@ void Renderer::Impl::render(const RenderTree& renderTree) {
     } else if (renderState != RenderState::Fully) {
         renderState = RenderState::Fully;
         observer->onDidFinishRenderingMap();
+    }
+
+    auto frame_end = Clock::now();
+    std::chrono::duration<double, std::milli> frameDuration = frame_end - frame_start;
+    std::chrono::duration<double, std::milli> orchDuration = render_start - frame_start;
+    std::chrono::duration<double, std::milli> renderDuration = frame_end - render_start;
+    std::chrono::duration<double, std::milli> uploadDuration = upload_end - upload_start;
+
+    stats.totalTime += frameDuration.count();
+    stats.orchestrationTime += orchDuration.count();
+
+    double orchestrationPercentage = orchDuration.count() / frameDuration.count() * 100.0;
+    double uploadPercentage = uploadDuration.count() / frameDuration.count() * 100.0;
+
+    if (stats.orchestrationTimePeak < orchDuration.count()) {
+        stats.orchestrationTimePeak = orchDuration.count();
+    }
+    if (stats.orchestrationPercentagePeak < orchestrationPercentage) {
+        stats.orchestrationPercentagePeak = orchestrationPercentage;
+    }
+    if (stats.uploadTimePeak < uploadDuration.count()) {
+        stats.uploadTimePeak = uploadDuration.count();
+    }
+    if (stats.uploadPercentagePeak < uploadPercentage) {
+        stats.uploadPercentagePeak = uploadPercentage;
+    }
+
+    constexpr double kMaxFrameDuration = 16.7; // 60 fps
+    if (frameDuration.count() > kMaxFrameDuration) {
+        stats.failedFrames++;
+        Log::Warning(Event::General,
+            "Failed frame stats: total: %f ms, orchestration %f ms, rendering %f ms, upload %f ms",
+            frameDuration.count(),
+            orchDuration.count(),
+            renderDuration.count(),
+            uploadDuration.count());
+        if (frameDuration.count() - orchDuration.count() <= kMaxFrameDuration) {
+            stats.framesSavedWithBackgroundOrchestration++;
+        }
     }
 }
 
