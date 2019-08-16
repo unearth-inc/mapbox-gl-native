@@ -21,7 +21,7 @@ using namespace style;
 
 namespace {
 
-inline const HeatmapLayer::Impl& impl(const Immutable<Layer::Impl>& impl) {
+inline const HeatmapLayer::Impl& impl_cast(const Immutable<Layer::Impl>& impl) {
     assert(impl->getTypeInfo() == HeatmapLayer::Impl::staticTypeInfo());
     return static_cast<const HeatmapLayer::Impl&>(*impl);
 }
@@ -30,13 +30,13 @@ inline const HeatmapLayer::Impl& impl(const Immutable<Layer::Impl>& impl) {
 
 RenderHeatmapLayer::RenderHeatmapLayer(Immutable<HeatmapLayer::Impl> _impl)
     : RenderLayer(makeMutable<HeatmapLayerProperties>(std::move(_impl))),
-    unevaluated(impl(baseImpl).paint.untransitioned()), colorRamp({256, 1}) {
+    unevaluated(impl_cast(baseImpl).paint.untransitioned()), colorRamp({256, 1}) {
 }
 
 RenderHeatmapLayer::~RenderHeatmapLayer() = default;
 
 void RenderHeatmapLayer::transition(const TransitionParameters& parameters) {
-    unevaluated = impl(baseImpl).paint.transitioned(parameters, std::move(unevaluated));
+    unevaluated = impl_cast(baseImpl).paint.transitioned(parameters, std::move(unevaluated));
     updateColorRamp();
 }
 

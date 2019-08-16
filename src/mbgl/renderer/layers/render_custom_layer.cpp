@@ -16,7 +16,7 @@ using namespace style;
 
 namespace {
 
-inline const CustomLayer::Impl& impl(const Immutable<style::Layer::Impl>& impl) {
+inline const CustomLayer::Impl& impl_cast(const Immutable<style::Layer::Impl>& impl) {
     assert(impl->getTypeInfo() == CustomLayer::Impl::staticTypeInfo());
     return static_cast<const CustomLayer::Impl&>(*impl);
 }
@@ -25,7 +25,7 @@ inline const CustomLayer::Impl& impl(const Immutable<style::Layer::Impl>& impl) 
 
 RenderCustomLayer::RenderCustomLayer(Immutable<style::CustomLayer::Impl> _impl)
     : RenderLayer(makeMutable<CustomLayerProperties>(std::move(_impl))),
-      host(impl(baseImpl).host) {
+      host(impl_cast(baseImpl).host) {
     assert(gfx::BackendScope::exists());
     MBGL_CHECK_ERROR(host->initialize());
 }
@@ -59,12 +59,12 @@ void RenderCustomLayer::prepare(const LayerPrepareParameters&) {
 }
 
 void RenderCustomLayer::render(PaintParameters& paintParameters) {
-    if (host != impl(baseImpl).host) {
+    if (host != impl_cast(baseImpl).host) {
         //If the context changed, deinitialize the previous one before initializing the new one.
         if (host && !contextDestroyed) {
             MBGL_CHECK_ERROR(host->deinitialize());
         }
-        host = impl(baseImpl).host;
+        host = impl_cast(baseImpl).host;
         MBGL_CHECK_ERROR(host->initialize());
     }
 
