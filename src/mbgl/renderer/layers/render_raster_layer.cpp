@@ -160,7 +160,7 @@ void RenderRasterLayer::render(PaintParameters& parameters) {
                     textures::image0::Value{ bucket.texture->getResource(), filter },
                     textures::image1::Value{ bucket.texture->getResource(), filter },
                 },
-                bucket.drawScopeID + std::to_string(i++));
+                std::to_string(i++));
         }
     } else if (renderTiles) {
         for (const RenderTile& tile : *renderTiles) {
@@ -174,7 +174,7 @@ void RenderRasterLayer::render(PaintParameters& parameters) {
                 continue;
 
             assert(bucket.texture);
-            if (bucket.vertexBuffer && bucket.indexBuffer && !bucket.segments.empty()) {
+            if (bucket.vertexBuffer && bucket.indexBuffer) {
                 // Draw only the parts of the tile that aren't drawn by another tile in the layer.
                 draw(parameters.matrixForTile(tile.id, true),
                      *bucket.vertexBuffer,
@@ -184,18 +184,22 @@ void RenderRasterLayer::render(PaintParameters& parameters) {
                          textures::image0::Value{ bucket.texture->getResource(), filter },
                          textures::image1::Value{ bucket.texture->getResource(), filter },
                      },
-                     bucket.drawScopeID);
+                     "image");
             } else {
                 // Draw the full tile.
+                if (bucket.segments.empty()) {
+                    // Copy over the segments so that we can create our own DrawScopes.
+                    bucket.segments = parameters.staticData.rasterSegments();
+                }
                 draw(parameters.matrixForTile(tile.id, true),
                      *parameters.staticData.rasterVertexBuffer,
                      *parameters.staticData.quadTriangleIndexBuffer,
-                     parameters.staticData.rasterSegments,
+                     bucket.segments,
                      RasterProgram::TextureBindings{
                          textures::image0::Value{ bucket.texture->getResource(), filter },
                          textures::image1::Value{ bucket.texture->getResource(), filter },
                      },
-                     bucket.drawScopeID);
+                     "image");
             }
         }
     }

@@ -124,7 +124,7 @@ void RenderHillshadeLayer::render(PaintParameters& parameters) {
             allUniformValues,
             allAttributeBindings,
             textureBindings,
-            getID() + "/" + util::toString(id)
+            getID()
         );
     };
 
@@ -176,6 +176,9 @@ void RenderHillshadeLayer::render(PaintParameters& parameters) {
 
             checkRenderability(parameters, programInstance.activeBindingCount(allAttributeBindings));
 
+            // Copy over the segments so that we can create our own DrawScopes that get destroyed
+            // after this draw call.
+            auto segments = parameters.staticData.rasterSegments();
             programInstance.draw(
                 parameters.context,
                 *renderPass,
@@ -185,20 +188,20 @@ void RenderHillshadeLayer::render(PaintParameters& parameters) {
                 parameters.colorModeForRenderPass(),
                 gfx::CullFaceMode::disabled(),
                 *parameters.staticData.quadTriangleIndexBuffer,
-                parameters.staticData.rasterSegments,
+                segments,
                 allUniformValues,
                 allAttributeBindings,
                 HillshadePrepareProgram::TextureBindings{
                     textures::image::Value{ bucket.dem->getResource() },
                 },
-                getID() + "/p/" + util::toString(tile.id)
+                "prepare"
             );
             bucket.texture = std::move(view->getTexture());
             bucket.setPrepared(true);
         } else if (parameters.pass == RenderPass::Translucent) {
             assert(bucket.texture);
 
-            if (bucket.vertexBuffer && bucket.indexBuffer && !bucket.segments.empty()) {
+            if (bucket.vertexBuffer && bucket.indexBuffer) {
                 // Draw only the parts of the tile that aren't drawn by another tile in the layer.
                 draw(parameters.matrixForTile(tile.id, true),
                      *bucket.vertexBuffer,
@@ -210,10 +213,14 @@ void RenderHillshadeLayer::render(PaintParameters& parameters) {
                      });
             } else {
                 // Draw the full tile.
+                if (bucket.segments.empty()) {
+                    // Copy over the segments so that we can create our own DrawScopes.
+                    bucket.segments = parameters.staticData.rasterSegments();
+                }
                 draw(parameters.matrixForTile(tile.id, true),
                      *parameters.staticData.rasterVertexBuffer,
                      *parameters.staticData.quadTriangleIndexBuffer,
-                     parameters.staticData.rasterSegments,
+                     bucket.segments,
                      tile.id,
                      HillshadeProgram::TextureBindings{
                          textures::image::Value{ bucket.texture->getResource(), gfx::TextureFilterType::Linear },

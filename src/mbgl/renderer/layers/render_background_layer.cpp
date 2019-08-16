@@ -25,9 +25,15 @@ inline const BackgroundLayer::Impl& impl_cast(const Immutable<style::Layer::Impl
 
 } // namespace
 
+class RenderBackgroundLayer::Impl {
+public:
+    SegmentVector<BackgroundAttributes> segments;
+};
+
 RenderBackgroundLayer::RenderBackgroundLayer(Immutable<style::BackgroundLayer::Impl> _impl)
     : RenderLayer(makeMutable<BackgroundLayerProperties>(std::move(_impl))),
-      unevaluated(impl_cast(baseImpl).paint.untransitioned()) {
+      unevaluated(impl_cast(baseImpl).paint.untransitioned()),
+      impl(std::make_unique<Impl>()) {
 }
 
 RenderBackgroundLayer::~RenderBackgroundLayer() = default;
@@ -69,7 +75,7 @@ void RenderBackgroundLayer::render(PaintParameters& parameters) {
     const Properties<>::PossiblyEvaluated properties;
     const BackgroundProgram::Binders paintAttributeData(properties, 0);
 
-    auto draw = [&](auto& program, auto&& uniformValues, const auto& textureBindings, const UnwrappedTileID& id) {
+    auto draw = [&](auto& program, auto&& uniformValues, const auto& textureBindings, const uint32_t id) {
         const auto allUniformValues = program.computeAllUniformValues(
             std::move(uniformValues),
             paintAttributeData,
@@ -95,13 +101,18 @@ void RenderBackgroundLayer::render(PaintParameters& parameters) {
             parameters.colorModeForRenderPass(),
             gfx::CullFaceMode::disabled(),
             *parameters.staticData.quadTriangleIndexBuffer,
-            parameters.staticData.tileTriangleSegments,
+            impl->segments,
             allUniformValues,
             allAttributeBindings,
             textureBindings,
-            getID() + "/" + util::toString(id)
+            util::toString(id)
         );
     };
+
+    if (impl->segments.empty()) {
+        impl->segments = parameters.staticData.tileTriangleSegments();
+    }
+
     const auto& evaluated = static_cast<const BackgroundLayerProperties&>(*evaluatedProperties).evaluated;
     const auto& crossfade = static_cast<const BackgroundLayerProperties&>(*evaluatedProperties).crossfade;
     if (!evaluated.get<BackgroundPattern>().to.empty()) {
@@ -111,6 +122,7 @@ void RenderBackgroundLayer::render(PaintParameters& parameters) {
         if (!imagePosA || !imagePosB)
             return;
 
+        uint32_t i = 0;
         for (const auto& tileID : util::tileCover(parameters.state, parameters.state.getIntegerZoom())) {
             draw(
                 parameters.programs.getBackgroundLayerPrograms().backgroundPattern,
@@ -127,7 +139,7 @@ void RenderBackgroundLayer::render(PaintParameters& parameters) {
                 BackgroundPatternProgram::TextureBindings{
                     textures::image::Value{ parameters.patternAtlas.textureBinding() },
                 },
-                tileID
+                i++
             );
         }
     } else {
@@ -137,6 +149,7 @@ void RenderBackgroundLayer::render(PaintParameters& parameters) {
         if (parameters.pass != backgroundRenderPass) {
             return;
         }
+        uint32_t i = 0;
         for (const auto& tileID : util::tileCover(parameters.state, parameters.state.getIntegerZoom())) {
             draw(
                 parameters.programs.getBackgroundLayerPrograms().background,
@@ -146,7 +159,7 @@ void RenderBackgroundLayer::render(PaintParameters& parameters) {
                     uniforms::opacity::Value( evaluated.get<BackgroundOpacity>() ),
                 },
                 BackgroundProgram::TextureBindings{},
-                tileID
+                i++
             );
         }
     }

@@ -145,7 +145,7 @@ void PaintParameters::renderTileClippingMasks(const RenderTiles& renderTiles) {
             gfx::ColorMode::disabled(),
             gfx::CullFaceMode::disabled(),
             *staticData.quadTriangleIndexBuffer,
-            staticData.tileTriangleSegments,
+            staticData.clippingMaskSegments,
             program.computeAllUniformValues(
                 ClippingMaskProgram::LayoutUniformValues {
                     uniforms::matrix::Value( matrixForTile(renderTile.id) ),

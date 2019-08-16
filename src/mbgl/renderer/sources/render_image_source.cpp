@@ -45,7 +45,7 @@ void ImageSourceRenderData::render(PaintParameters& parameters) const {
             gfx::ColorMode::unblended(),
             gfx::CullFaceMode::disabled(),
             *parameters.staticData.tileBorderIndexBuffer,
-            parameters.staticData.tileBorderSegments,
+            parameters.staticData.tileBorderSegments(),
             programInstance.computeAllUniformValues(
                 DebugProgram::LayoutUniformValues {
                     uniforms::matrix::Value( matrix ),

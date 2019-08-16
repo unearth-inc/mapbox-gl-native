@@ -51,14 +51,35 @@ static gfx::VertexVector<HeatmapTextureLayoutVertex> heatmapTextureVertices() {
 
 RenderStaticData::RenderStaticData(gfx::Context& context, float pixelRatio, const optional<std::string>& programCacheDir)
     : programs(context, ProgramParameters { pixelRatio, false, programCacheDir })
+    , clippingMaskSegments(tileTriangleSegments())
 #ifndef NDEBUG
     , overdrawPrograms(context, ProgramParameters { pixelRatio, true, programCacheDir })
 #endif
 {
-    tileTriangleSegments.emplace_back(0, 0, 4, 6);
-    tileBorderSegments.emplace_back(0, 0, 4, 5);
-    rasterSegments.emplace_back(0, 0, 4, 6);
-    heatmapTextureSegments.emplace_back(0, 0, 4, 6);
+}
+
+SegmentVector<BackgroundAttributes> RenderStaticData::tileTriangleSegments() {
+    SegmentVector<BackgroundAttributes> segments;
+    segments.emplace_back(0, 0, 4, 6);
+    return segments;
+}
+
+SegmentVector<DebugAttributes> RenderStaticData::tileBorderSegments() {
+    SegmentVector<DebugAttributes> segments;
+    segments.emplace_back(0, 0, 4, 5);
+    return segments;
+}
+
+SegmentVector<RasterAttributes> RenderStaticData::rasterSegments() {
+    SegmentVector<RasterAttributes> segments;
+    segments.emplace_back(0, 0, 4, 6);
+    return segments;
+}
+
+SegmentVector<HeatmapTextureAttributes> RenderStaticData::heatmapTextureSegments() {
+    SegmentVector<HeatmapTextureAttributes> segments;
+    segments.emplace_back(0, 0, 4, 6);
+    return segments;
 }
 
 void RenderStaticData::upload(gfx::UploadPass& uploadPass) {

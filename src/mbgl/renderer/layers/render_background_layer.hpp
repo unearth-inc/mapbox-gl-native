@@ -22,6 +22,8 @@ private:
 
     // Paint properties
     style::BackgroundPaintProperties::Unevaluated unevaluated;
+    class Impl;
+    const std::unique_ptr<Impl> impl;
 };
 
 } // namespace mbgl

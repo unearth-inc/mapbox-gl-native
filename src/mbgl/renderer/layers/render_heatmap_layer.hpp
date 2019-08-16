@@ -3,9 +3,6 @@
 #include <mbgl/renderer/render_layer.hpp>
 #include <mbgl/style/layers/heatmap_layer_impl.hpp>
 #include <mbgl/style/layers/heatmap_layer_properties.hpp>
-#include <mbgl/gfx/texture.hpp>
-#include <mbgl/gfx/offscreen_texture.hpp>
-#include <mbgl/util/optional.hpp>
 
 namespace mbgl {
 
@@ -32,11 +29,8 @@ private:
 
     // Paint properties
     style::HeatmapPaintProperties::Unevaluated unevaluated;
-    PremultipliedImage colorRamp;
-    std::unique_ptr<gfx::OffscreenTexture> renderTexture;
-    optional<gfx::Texture> colorRampTexture;
-
-    void updateColorRamp();
+    class Impl;
+    const std::unique_ptr<Impl> impl;
 };
 
 } // namespace mbgl

@@ -167,7 +167,7 @@ void RenderTile::finishRender(PaintParameters& parameters) const {
             ),
             allAttributeBindings,
             DebugProgram::TextureBindings{},
-            "__debug/" + debugBucket->drawScopeID + "/text-outline"
+            "text-outline"
         );
 
         program.draw(
@@ -191,12 +191,15 @@ void RenderTile::finishRender(PaintParameters& parameters) const {
             ),
             allAttributeBindings,
             DebugProgram::TextureBindings{},
-            "__debug/" + debugBucket->drawScopeID + "/text"
+            "text"
         );
     }
 
     if (parameters.debugOptions & MapDebugOptions::TileBorders) {
         assert(debugBucket);
+        if (debugBucket->tileBorderSegments.empty()) {
+            debugBucket->tileBorderSegments = parameters.staticData.tileBorderSegments();
+        }
         parameters.programs.debug.draw(
             parameters.context,
             *parameters.renderPass,
@@ -206,7 +209,7 @@ void RenderTile::finishRender(PaintParameters& parameters) const {
             gfx::ColorMode::unblended(),
             gfx::CullFaceMode::disabled(),
             *parameters.staticData.tileBorderIndexBuffer,
-            parameters.staticData.tileBorderSegments,
+            debugBucket->tileBorderSegments,
             program.computeAllUniformValues(
                 DebugProgram::LayoutUniformValues {
                     uniforms::matrix::Value( matrix ),
@@ -222,7 +225,7 @@ void RenderTile::finishRender(PaintParameters& parameters) const {
                 properties
             ),
             DebugProgram::TextureBindings{},
-            "__debug/" + debugBucket->drawScopeID
+            "border"
         );
     }
 }

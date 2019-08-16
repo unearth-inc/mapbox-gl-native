@@ -12,6 +12,9 @@
 #include <mbgl/gfx/cull_face_mode.hpp>
 #include <mbgl/gfx/render_pass.hpp>
 #include <mbgl/gfx/context.hpp>
+#include <mbgl/gfx/texture.hpp>
+#include <mbgl/gfx/offscreen_texture.hpp>
+#include <mbgl/util/optional.hpp>
 #include <mbgl/util/math.hpp>
 #include <mbgl/util/intersection_tests.hpp>
 
@@ -28,16 +31,29 @@ inline const HeatmapLayer::Impl& impl_cast(const Immutable<Layer::Impl>& impl) {
 
 } // namespace
 
+class RenderHeatmapLayer::Impl {
+public:
+    Impl() : colorRamp({256, 1}) {}
+
+    void updateColorRamp(ColorRampPropertyValue);
+
+    PremultipliedImage colorRamp;
+    std::unique_ptr<gfx::OffscreenTexture> renderTexture;
+    optional<gfx::Texture> colorRampTexture;
+    SegmentVector<HeatmapTextureAttributes> segments;
+};
+
 RenderHeatmapLayer::RenderHeatmapLayer(Immutable<HeatmapLayer::Impl> _impl)
     : RenderLayer(makeMutable<HeatmapLayerProperties>(std::move(_impl))),
-    unevaluated(impl_cast(baseImpl).paint.untransitioned()), colorRamp({256, 1}) {
+    unevaluated(impl_cast(baseImpl).paint.untransitioned()),
+    impl(std::make_unique<Impl>()) {
 }
 
 RenderHeatmapLayer::~RenderHeatmapLayer() = default;
 
 void RenderHeatmapLayer::transition(const TransitionParameters& parameters) {
     unevaluated = impl_cast(baseImpl).paint.transitioned(parameters, std::move(unevaluated));
-    updateColorRamp();
+    impl->updateColorRamp(unevaluated.get<HeatmapColor>().getValue());
 }
 
 void RenderHeatmapLayer::evaluate(const PropertyEvaluationParameters& parameters) {
@@ -61,9 +77,9 @@ bool RenderHeatmapLayer::hasCrossfade() const {
 }
 
 void RenderHeatmapLayer::upload(gfx::UploadPass& uploadPass) {
-    if (!colorRampTexture) {
-        colorRampTexture =
-            uploadPass.createTexture(colorRamp, gfx::TextureChannelDataType::UnsignedByte);
+    if (!impl->colorRampTexture) {
+        impl->colorRampTexture =
+            uploadPass.createTexture(impl->colorRamp, gfx::TextureChannelDataType::UnsignedByte);
     }
 }
 
@@ -77,27 +93,27 @@ void RenderHeatmapLayer::render(PaintParameters& parameters) {
         const auto& viewportSize = parameters.staticData.backendSize;
         const auto size = Size{viewportSize.width / 4, viewportSize.height / 4};
 
-        assert(colorRampTexture);
+        assert(impl->colorRampTexture);
 
-        if (!renderTexture || renderTexture->getSize() != size) {
-            renderTexture.reset();
+        if (!impl->renderTexture || impl->renderTexture->getSize() != size) {
+            impl->renderTexture.reset();
             if (parameters.context.supportsHalfFloatTextures) {
-                renderTexture = parameters.context.createOffscreenTexture(size, gfx::TextureChannelDataType::HalfFloat);
+                impl->renderTexture = parameters.context.createOffscreenTexture(size, gfx::TextureChannelDataType::HalfFloat);
 
-                if (!renderTexture->isRenderable()) {
+                if (!impl->renderTexture->isRenderable()) {
                     // can't render to a half-float texture; falling back to unsigned byte one
-                    renderTexture.reset();
+                    impl->renderTexture.reset();
                     parameters.context.supportsHalfFloatTextures = false;
                 }
             }
 
-            if (!renderTexture) {
-                renderTexture = parameters.context.createOffscreenTexture(size, gfx::TextureChannelDataType::UnsignedByte);
+            if (!impl->renderTexture) {
+                impl->renderTexture = parameters.context.createOffscreenTexture(size, gfx::TextureChannelDataType::UnsignedByte);
             }
         }
 
         auto renderPass = parameters.encoder->createRenderPass(
-            "heatmap texture", { *renderTexture, Color{ 0.0f, 0.0f, 0.0f, 1.0f }, {}, {} });
+            "heatmap texture", { *impl->renderTexture, Color{ 0.0f, 0.0f, 0.0f, 1.0f }, {}, {} });
 
         for (const RenderTile& tile : *renderTiles) {
             const LayerRenderData* renderData = getRenderDataForPass(tile, parameters.pass);
@@ -177,6 +193,10 @@ void RenderHeatmapLayer::render(PaintParameters& parameters) {
 
         checkRenderability(parameters, programInstance.activeBindingCount(allAttributeBindings));
 
+        if (impl->segments.empty()) {
+            // Copy over the segments so that we can create our own DrawScopes.
+            impl->segments = parameters.staticData.heatmapTextureSegments();
+        }
         programInstance.draw(
             parameters.context,
             *parameters.renderPass,
@@ -186,20 +206,19 @@ void RenderHeatmapLayer::render(PaintParameters& parameters) {
             parameters.colorModeForRenderPass(),
             gfx::CullFaceMode::disabled(),
             *parameters.staticData.quadTriangleIndexBuffer,
-            parameters.staticData.heatmapTextureSegments,
+            impl->segments,
             allUniformValues,
             allAttributeBindings,
             HeatmapTextureProgram::TextureBindings{
-                textures::image::Value{ renderTexture->getTexture().getResource(), gfx::TextureFilterType::Linear },
-                textures::color_ramp::Value{ colorRampTexture->getResource(), gfx::TextureFilterType::Linear },
+                textures::image::Value{ impl->renderTexture->getTexture().getResource(), gfx::TextureFilterType::Linear },
+                textures::color_ramp::Value{ impl->colorRampTexture->getResource(), gfx::TextureFilterType::Linear },
             },
             getID()
         );
     }
 }
 
-void RenderHeatmapLayer::updateColorRamp() {
-    auto colorValue = unevaluated.get<HeatmapColor>().getValue();
+void RenderHeatmapLayer::Impl::updateColorRamp(ColorRampPropertyValue colorValue) {
     if (colorValue.isUndefined()) {
         colorValue = HeatmapLayer::getDefaultHeatmapColor();
     }
