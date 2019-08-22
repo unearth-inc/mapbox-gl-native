@@ -24,10 +24,8 @@ void RasterBucket::upload(gfx::UploadPass& uploadPass) {
     if (!texture) {
         texture = uploadPass.createTexture(*image);
     }
-    if (!vertices.empty()) {
+    if (!segments.empty()) {
         vertexBuffer = uploadPass.createVertexBuffer(std::move(vertices));
-    }
-    if (!indices.empty()) {
         indexBuffer = uploadPass.createIndexBuffer(std::move(indices));
     }
     uploaded = true;
