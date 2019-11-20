@@ -26,11 +26,33 @@ android {
             }
         }
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        def result = "debug";
+
+        if (project.hasProperty("testBuildType")) {
+            result = project.getProperties().get("testBuildType")
+        }
+        android {
+            testBuildType result
+        }
     }
     externalNativeBuild {
         cmake {
             version '3.10.2'
             path '../../../next/CMakeLists.txt'
+        }
+    }
+    signingConfigs {
+        release {
+            storeFile file("test.jks")
+            storePassword "password"
+            keyAlias "test"
+            keyPassword "password"
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
         }
     }
 }
