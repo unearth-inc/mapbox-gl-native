@@ -87,11 +87,16 @@ private:
 
 class BucketPlacementParameters {
 public:
+    friend bool operator<(const BucketPlacementParameters& lhs, const BucketPlacementParameters& rhs) { return lhs.sortKey < rhs.sortKey; }
+    SymbolBucket& bucket;
     const RenderTile& tile;
     const mat4& projMatrix;
     std::string sourceId;
     std::shared_ptr<FeatureIndex> featureIndex;
     bool showCollisionBoxes;
+    float sortKey;
+    size_t symbolInstanceStart;
+    size_t symbolInstanceEnd;
 };
 
 class Placement;

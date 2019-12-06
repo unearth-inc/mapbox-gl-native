@@ -45,6 +45,7 @@ public:
 
     const std::string bucketLeaderID;
     std::vector<SymbolInstance> symbolInstances;
+    std::vector<SortKeyRange> sortKeyRanges;
 
     static constexpr float INVALID_OFFSET_VALUE = std::numeric_limits<float>::max();
     /**
@@ -108,6 +109,7 @@ private:
 
     bool iconsNeedLinear = false;
     bool sortFeaturesByY = false;
+    bool sortFeaturesByKey = false;
     bool allowVerticalPlacement = false;
     bool iconsInText = false;
     std::vector<style::TextWritingModeType> placementModes;
