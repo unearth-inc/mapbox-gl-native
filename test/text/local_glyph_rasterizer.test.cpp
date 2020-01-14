@@ -52,7 +52,7 @@ public:
 } // end namespace
 
 // Enabling Qt requires adding a CJK-compatible font in the CI image.
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(__QT__)
 
 TEST(LocalGlyphRasterizer, PingFang) {
     LocalGlyphRasterizerTest test(std::string("PingFang"));
