@@ -274,7 +274,7 @@ commands:
       - run:
           name: << parameters.step_name >>
           command: |
-            build/mbgl-render-test-runner << parameters.metrics_params >>
+            build/tools/render-test/mbgl-render-test << parameters.metrics_params >>
   save:
     steps:
       - save_cache:
@@ -389,7 +389,7 @@ jobs:
           name: Retrieve Rebaselined Metrics from gcloud
           command: |
             metricsResult=$(gsutil ls -d gs://test-lab-186672a0qp5bq-ycr70axads3nc/render-test-app-${CIRCLE_BUILD_NUM}/*/*/sdcard/baselines/*) || true
-            gsutil -m cp -r $metricsResult metrics/android-render-test-runner/ || true
+            gsutil -m cp -r $metricsResult metrics/android-render-test/ || true
       - save
   sanity-checks:
     executor: ubuntu-disco
@@ -436,7 +436,7 @@ jobs:
       - run:
           name: 'Binary Size'
           command: |
-            /tmp/attach/install/linux-gcc8-release/bin/mbgl-render-test-runner -u rebaseline -p metrics/binary-size.json
+            /tmp/attach/install/linux-gcc8-release/bin/mbgl-render-test -u rebaseline -p metrics/binary-size.json
       - run:
           name: 'Metrics Baselines'
           command: |
