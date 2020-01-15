@@ -22,6 +22,7 @@ option(MBGL_WITH_CORE_ONLY "Build only the core bits, no platform code" OFF)
 option(MBGL_WITH_COVERAGE "Enable code coverage collection" OFF)
 option(MBGL_WITH_QT "Build Mapbox GL Qt bindings" OFF)
 option(MBGL_WITH_SANITIZER "Use [address|thread|undefined] here" OFF)
+option(MBGL_WITH_OPENGL "Enable OpenGL renderer." ON)
 
 add_library(
     mbgl-compiler-options INTERFACE
@@ -92,13 +93,10 @@ add_library(
     ${MBGL_ROOT}/include/mbgl/actor/message.hpp
     ${MBGL_ROOT}/include/mbgl/actor/scheduler.hpp
     ${MBGL_ROOT}/include/mbgl/annotation/annotation.hpp
-    ${MBGL_ROOT}/include/mbgl/gfx/backend.hpp
     ${MBGL_ROOT}/include/mbgl/gfx/backend_scope.hpp
     ${MBGL_ROOT}/include/mbgl/gfx/renderable.hpp
     ${MBGL_ROOT}/include/mbgl/gfx/renderer_backend.hpp
     ${MBGL_ROOT}/include/mbgl/gfx/rendering_stats.hpp
-    ${MBGL_ROOT}/include/mbgl/gl/renderable_resource.hpp
-    ${MBGL_ROOT}/include/mbgl/gl/renderer_backend.hpp
     ${MBGL_ROOT}/include/mbgl/layermanager/background_layer_factory.hpp
     ${MBGL_ROOT}/include/mbgl/layermanager/circle_layer_factory.hpp
     ${MBGL_ROOT}/include/mbgl/layermanager/custom_layer_factory.hpp
@@ -323,48 +321,6 @@ add_library(
     ${MBGL_ROOT}/src/mbgl/gfx/upload_pass.hpp
     ${MBGL_ROOT}/src/mbgl/gfx/vertex_buffer.hpp
     ${MBGL_ROOT}/src/mbgl/gfx/vertex_vector.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/attribute.cpp
-    ${MBGL_ROOT}/src/mbgl/gl/attribute.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/command_encoder.cpp
-    ${MBGL_ROOT}/src/mbgl/gl/command_encoder.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/context.cpp
-    ${MBGL_ROOT}/src/mbgl/gl/context.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/debugging_extension.cpp
-    ${MBGL_ROOT}/src/mbgl/gl/debugging_extension.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/defines.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/draw_scope_resource.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/enum.cpp
-    ${MBGL_ROOT}/src/mbgl/gl/enum.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/extension.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/framebuffer.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/index_buffer_resource.cpp
-    ${MBGL_ROOT}/src/mbgl/gl/index_buffer_resource.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/object.cpp
-    ${MBGL_ROOT}/src/mbgl/gl/object.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/offscreen_texture.cpp
-    ${MBGL_ROOT}/src/mbgl/gl/offscreen_texture.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/program.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/render_pass.cpp
-    ${MBGL_ROOT}/src/mbgl/gl/render_pass.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/renderbuffer_resource.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/renderer_backend.cpp
-    ${MBGL_ROOT}/src/mbgl/gl/state.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/texture.cpp
-    ${MBGL_ROOT}/src/mbgl/gl/texture.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/texture_resource.cpp
-    ${MBGL_ROOT}/src/mbgl/gl/texture_resource.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/types.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/uniform.cpp
-    ${MBGL_ROOT}/src/mbgl/gl/uniform.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/upload_pass.cpp
-    ${MBGL_ROOT}/src/mbgl/gl/upload_pass.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/value.cpp
-    ${MBGL_ROOT}/src/mbgl/gl/value.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/vertex_array.cpp
-    ${MBGL_ROOT}/src/mbgl/gl/vertex_array.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/vertex_array_extension.hpp
-    ${MBGL_ROOT}/src/mbgl/gl/vertex_buffer_resource.cpp
-    ${MBGL_ROOT}/src/mbgl/gl/vertex_buffer_resource.hpp
     ${MBGL_ROOT}/src/mbgl/layermanager/background_layer_factory.cpp
     ${MBGL_ROOT}/src/mbgl/layermanager/circle_layer_factory.cpp
     ${MBGL_ROOT}/src/mbgl/layermanager/custom_layer_factory.cpp
@@ -400,7 +356,6 @@ add_library(
     ${MBGL_ROOT}/src/mbgl/map/transform_state.hpp
     ${MBGL_ROOT}/src/mbgl/map/zoom_history.hpp
     ${MBGL_ROOT}/src/mbgl/math/log2.cpp
-    ${MBGL_ROOT}/src/mbgl/platform/gl_functions.cpp
     ${MBGL_ROOT}/src/mbgl/programs/attributes.hpp
     ${MBGL_ROOT}/src/mbgl/programs/background_pattern_program.hpp
     ${MBGL_ROOT}/src/mbgl/programs/background_program.cpp
@@ -422,37 +377,6 @@ add_library(
     ${MBGL_ROOT}/src/mbgl/programs/fill_pattern_program.hpp
     ${MBGL_ROOT}/src/mbgl/programs/fill_program.cpp
     ${MBGL_ROOT}/src/mbgl/programs/fill_program.hpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/background.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/background_pattern.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/circle.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/clipping_mask.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/collision_box.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/collision_circle.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/debug.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/fill.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/fill_extrusion.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/fill_extrusion_pattern.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/fill_outline.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/fill_outline_pattern.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/fill_pattern.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/heatmap.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/heatmap_texture.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/hillshade.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/hillshade_prepare.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/line.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/line_gradient.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/line_pattern.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/line_sdf.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/preludes.hpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/raster.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/shader_source.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/shader_source.hpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/shaders.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/shaders.hpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/symbol_icon.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/symbol_sdf_icon.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/symbol_sdf_text.cpp
-    ${MBGL_ROOT}/src/mbgl/programs/gl/symbol_text_and_icon.cpp
     ${MBGL_ROOT}/src/mbgl/programs/heatmap_program.cpp
     ${MBGL_ROOT}/src/mbgl/programs/heatmap_program.hpp
     ${MBGL_ROOT}/src/mbgl/programs/heatmap_texture_program.cpp
@@ -883,6 +807,88 @@ add_library(
     ${MBGL_ROOT}/src/parsedate/parsedate.cpp
     ${MBGL_ROOT}/src/parsedate/parsedate.hpp
 )
+
+if (MBGL_WITH_OPENGL)
+    target_compile_definitions(mbgl-core PRIVATE MBGL_RENDER_BACKEND_OPENGL=1)
+    target_sources(mbgl-core PRIVATE
+        ${MBGL_ROOT}/include/mbgl/gfx/backend.hpp
+        ${MBGL_ROOT}/src/mbgl/platform/gl_functions.cpp
+        ${MBGL_ROOT}/include/mbgl/gl/renderable_resource.hpp
+        ${MBGL_ROOT}/include/mbgl/gl/renderer_backend.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/attribute.cpp
+        ${MBGL_ROOT}/src/mbgl/gl/attribute.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/command_encoder.cpp
+        ${MBGL_ROOT}/src/mbgl/gl/command_encoder.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/context.cpp
+        ${MBGL_ROOT}/src/mbgl/gl/context.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/debugging_extension.cpp
+        ${MBGL_ROOT}/src/mbgl/gl/debugging_extension.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/defines.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/draw_scope_resource.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/enum.cpp
+        ${MBGL_ROOT}/src/mbgl/gl/enum.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/extension.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/framebuffer.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/index_buffer_resource.cpp
+        ${MBGL_ROOT}/src/mbgl/gl/index_buffer_resource.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/object.cpp
+        ${MBGL_ROOT}/src/mbgl/gl/object.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/offscreen_texture.cpp
+        ${MBGL_ROOT}/src/mbgl/gl/offscreen_texture.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/program.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/render_pass.cpp
+        ${MBGL_ROOT}/src/mbgl/gl/render_pass.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/renderbuffer_resource.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/renderer_backend.cpp
+        ${MBGL_ROOT}/src/mbgl/gl/state.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/texture.cpp
+        ${MBGL_ROOT}/src/mbgl/gl/texture.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/texture_resource.cpp
+        ${MBGL_ROOT}/src/mbgl/gl/texture_resource.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/types.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/uniform.cpp
+        ${MBGL_ROOT}/src/mbgl/gl/uniform.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/upload_pass.cpp
+        ${MBGL_ROOT}/src/mbgl/gl/upload_pass.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/value.cpp
+        ${MBGL_ROOT}/src/mbgl/gl/value.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/vertex_array.cpp
+        ${MBGL_ROOT}/src/mbgl/gl/vertex_array.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/vertex_array_extension.hpp
+        ${MBGL_ROOT}/src/mbgl/gl/vertex_buffer_resource.cpp
+        ${MBGL_ROOT}/src/mbgl/gl/vertex_buffer_resource.hpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/background.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/background_pattern.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/circle.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/clipping_mask.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/collision_box.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/collision_circle.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/debug.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/fill.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/fill_extrusion.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/fill_extrusion_pattern.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/fill_outline.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/fill_outline_pattern.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/fill_pattern.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/heatmap.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/heatmap_texture.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/hillshade.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/hillshade_prepare.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/line.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/line_gradient.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/line_pattern.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/line_sdf.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/preludes.hpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/raster.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/shader_source.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/shader_source.hpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/shaders.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/shaders.hpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/symbol_icon.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/symbol_sdf_icon.cpp
+        ${MBGL_ROOT}/src/mbgl/programs/gl/symbol_sdf_text.cpp
+    )
+endif()
 
 if(EXISTS ${MBGL_ROOT}/.git/HEAD)
     execute_process(

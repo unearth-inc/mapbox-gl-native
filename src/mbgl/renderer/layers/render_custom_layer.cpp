@@ -6,8 +6,10 @@
 #include <mbgl/platform/gl_functions.hpp>
 #include <mbgl/style/layers/custom_layer_impl.hpp>
 #include <mbgl/map/transform_state.hpp>
+#ifdef MBGL_RENDER_BACKEND_OPENGL
 #include <mbgl/gl/context.hpp>
 #include <mbgl/gl/renderable_resource.hpp>
+#endif
 #include <mbgl/util/mat4.hpp>
 
 namespace mbgl {
@@ -67,7 +69,7 @@ void RenderCustomLayer::render(PaintParameters& paintParameters) {
         host = impl(baseImpl).host;
         MBGL_CHECK_ERROR(host->initialize());
     }
-
+#ifdef MBGL_RENDER_BACKEND_OPENGL
     // TODO: remove cast
     auto& glContext = static_cast<gl::Context&>(paintParameters.context);
     const TransformState& state = paintParameters.state;
@@ -99,6 +101,9 @@ void RenderCustomLayer::render(PaintParameters& paintParameters) {
     // the viewport or Framebuffer.
     paintParameters.backend.getDefaultRenderable().getResource<gl::RenderableResource>().bind();
     glContext.setDirtyState();
+#else
+    (void) &paintParameters;
+#endif
 }
 
 } // namespace mbgl
