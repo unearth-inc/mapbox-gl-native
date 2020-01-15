@@ -6,13 +6,6 @@ set(MBGL_ROOT ${PROJECT_SOURCE_DIR})
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER Core)
 
-set(
-    MEMORYCHECK_COMMAND_OPTIONS
-    "--leak-check=full --gen-suppressions=all --error-exitcode=1 --suppressions=${MBGL_ROOT}/scripts/valgrind.sup"
-)
-
-include(CTest)
-
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
@@ -21,6 +14,19 @@ option(MBGL_WITH_CORE_ONLY "Build only the core bits, no platform code" OFF)
 option(MBGL_WITH_COVERAGE "Enable code coverage collection" OFF)
 option(MBGL_WITH_QT "Build Mapbox GL Qt bindings" OFF)
 option(MBGL_WITH_SANITIZER "Use [address|thread|undefined] here" OFF)
+
+if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+endif()
+
+set(
+    MEMORYCHECK_COMMAND_OPTIONS
+    "--leak-check=full --gen-suppressions=all --error-exitcode=1 --suppressions=${MBGL_ROOT}/scripts/valgrind.sup"
+)
+
+include(CTest)
 
 add_library(
     mbgl-compiler-options INTERFACE
@@ -916,7 +922,7 @@ target_include_directories(
 if(NOT TARGET mapbox-base)
     add_subdirectory(${PROJECT_SOURCE_DIR}/vendor/mapbox-base/mapbox)
     add_subdirectory(${PROJECT_SOURCE_DIR}/vendor/mapbox-base/extras)
-endif(NOT TARGET mapbox-base)
+endif()
 
 include(${PROJECT_SOURCE_DIR}/vendor/boost.cmake)
 include(${PROJECT_SOURCE_DIR}/vendor/earcut.hpp.cmake)
