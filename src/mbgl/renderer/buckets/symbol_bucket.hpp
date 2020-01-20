@@ -116,6 +116,7 @@ public:
     // Set and used by placement.
     mutable bool justReloaded : 1;
     bool hasVariablePlacement : 1;
+    bool hasUninitializedSymbols : 1;
 
     std::vector<SymbolInstance> symbolInstances;
 

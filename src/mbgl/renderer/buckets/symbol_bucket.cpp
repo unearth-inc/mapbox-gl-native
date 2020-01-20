@@ -37,6 +37,7 @@ SymbolBucket::SymbolBucket(Immutable<style::SymbolLayoutProperties::PossiblyEval
       iconsInText(iconsInText_),
       justReloaded(false),
       hasVariablePlacement(false),
+      hasUninitializedSymbols(false),
       symbolInstances(symbolInstances_),
       textSizeBinder(SymbolSizeBinder::create(zoom, textSize, TextSize::defaultValue())),
       iconSizeBinder(SymbolSizeBinder::create(zoom, iconSize, IconSize::defaultValue())),

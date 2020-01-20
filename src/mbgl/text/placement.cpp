@@ -212,8 +212,10 @@ void Placement::placeBucket(const SymbolBucket& bucket,
     std::vector<ProjectedCollisionBox> textBoxes;
     std::vector<ProjectedCollisionBox> iconBoxes;
 
-    auto placeSymbol = [&] (const SymbolInstance& symbolInstance) {
-        if (seenCrossTileIDs.count(symbolInstance.crossTileID) != 0u) return;
+    auto placeSymbol = [&](const SymbolInstance& symbolInstance) {
+        if (symbolInstance.crossTileID == SymbolInstance::kInvalidCrossTileID ||
+            seenCrossTileIDs.count(symbolInstance.crossTileID) != 0u)
+            return;
 
         if (renderTile.holdForFade()) {
             // Mark all symbols from this tile as "not placed", but don't add to seenCrossTileIDs, because we don't

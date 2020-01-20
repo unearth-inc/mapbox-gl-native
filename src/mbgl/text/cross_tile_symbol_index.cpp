@@ -95,13 +95,32 @@ void CrossTileSymbolLayerIndex::handleWrapJump(float newLng) {
     lng = newLng;
 }
 
+namespace {
+
+bool isInVewport(const mat4& posMatrix, const Point<float>& point) {
+    vec4 p = {{point.x, point.y, 0, 1}};
+    matrix::transformMat4(p, p, posMatrix);
+
+    constexpr float buffer = 0.5f;
+
+    float x = (p[0] / p[3] + 1.0f) / 2.0f;
+    if (x < (0.0f - buffer) || x > (1.0f + buffer)) return false;
+
+    float y = (-p[1] / p[3] + 1.0f) / 2.0f;
+    if (y < (0.0f - buffer) || y > (1.0f + buffer)) return false;
+
+    return true;
+}
+
+} // namespace
+
 bool CrossTileSymbolLayerIndex::addBucket(const OverscaledTileID& tileID,
                                           SymbolBucket& bucket,
-                                          const TransformState& /*transformState*/) {
+                                          const TransformState& transformState) {
     auto& thisZoomIndexes = indexes[tileID.overscaledZ];
     auto previousIndex = thisZoomIndexes.find(tileID);
     if (previousIndex != thisZoomIndexes.end()) {
-        if (previousIndex->second.bucketInstanceId == bucket.bucketInstanceId) {
+        if (previousIndex->second.bucketInstanceId == bucket.bucketInstanceId && !bucket.hasUninitializedSymbols) {
             return false;
         } else {
             // We're replacing this bucket with an updated version
@@ -112,8 +131,28 @@ bool CrossTileSymbolLayerIndex::addBucket(const OverscaledTileID& tileID,
         }
     }
 
-    for (auto& symbolInstance: bucket.symbolInstances) {
-        symbolInstance.crossTileID = 0;
+    bucket.hasUninitializedSymbols = false;
+
+    if (tileID.overscaleFactor() > 1u) {
+        // For overscaled tiles the viewport might be showing only a small part of the tile,
+        // so we filter out the off-screen symbols to improve the performance.
+        mat4 posMatrix;
+        const auto& projMatrix = transformState.getProjectionMatrix();
+        transformState.matrixFor(posMatrix, tileID.toUnwrapped());
+        matrix::multiply(posMatrix, projMatrix, posMatrix);
+
+        for (auto& symbolInstance : bucket.symbolInstances) {
+            if (isInVewport(posMatrix, symbolInstance.anchor.point)) {
+                symbolInstance.crossTileID = 0u;
+            } else {
+                symbolInstance.crossTileID = SymbolInstance::kInvalidCrossTileID;
+                bucket.hasUninitializedSymbols = true;
+            }
+        }
+    } else {
+        for (auto& symbolInstance : bucket.symbolInstances) {
+            symbolInstance.crossTileID = 0u;
+        }
     }
 
     auto& thisZoomUsedCrossTileIDs = usedCrossTileIDs[tileID.overscaledZ];
