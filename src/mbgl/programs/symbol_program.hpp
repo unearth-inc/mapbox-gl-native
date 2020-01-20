@@ -206,9 +206,16 @@ public:
                                                             bool isSDF,
                                                             Point<float> pixelOffset,
                                                             Point<float> minFontScale) {
-        const uint16_t aSizeMin =
+        const uint16_t aSizeMin;
+        const uint16_t aSizeMax;
+        if (isSDF) {
+          aSizeMin = (static_cast<uint16_t>(sizeData.min) << 1) + uint16_t(isSDF);
+          aSizeMax = static_cast<uint16_t>(sizeData.max)
+        } else {
+          aSizeMin =
             (std::min(MAX_PACKED_SIZE, static_cast<uint16_t>(sizeData.min * SIZE_PACK_FACTOR)) << 1) + uint16_t(isSDF);
-        const uint16_t aSizeMax = std::min(MAX_PACKED_SIZE, static_cast<uint16_t>(sizeData.max * SIZE_PACK_FACTOR));
+          aSizeMax = std::min(MAX_PACKED_SIZE, static_cast<uint16_t>(sizeData.max * SIZE_PACK_FACTOR));
+        }
         return {
             // combining pos and offset to reduce number of vertex attributes passed to shader (8 max for some devices)
             {{static_cast<int16_t>(labelAnchor.x),
